@@ -1,0 +1,60 @@
+{{define "content"}} {{ if .User }}
+<div class="row">
+	<div class="col s12 m3">
+		<div class="card col s12">
+			<div class="card-content">
+				<span class="card-title">pasta</span>
+			</div>
+			<div class="collection" style="margin-bottom:0; border-left: 0; border-right: 0; border-bottom:0;">
+				{{range .Info.List}} <a href="/pasta?s={{.Server}}&id={{.ID}}" class="collection-item">{{.Title}}</a> {{end}}
+			</div>
+			{{ if .User }}
+			<div class="card-action">
+				<a href="/pasta?s={{.Info.Server}}">create</a>
+			</div>
+			{{ end }}
+		</div>
+	</div>
+	<div class="col s12 m9">
+		<div class="card col s12">
+			{{if .Info.Current}}
+			<div class="card-content">
+				<span class="card-title">{{.Info.Current.Title}}</span>
+				<p>{{.Info.Current.Content}}</p>
+			</div>
+			{{else}}
+			<form action="/api/create_pasta" method="POST">
+				<div class="card-content">
+					<span class="card-title">content</span>
+					<div class="row">
+						<div class="input-field col s12">
+							<input id="title" type="text" class="validate" name="title">
+							<label for="pasta_title">title</label>
+						</div>
+						<div class="input-field col s12">
+							<textarea id="pasta_content" class="materialize-textarea" name="content"></textarea>
+							<label for="pasta_content">pasta content</label>
+						</div>
+					</div>
+				</div>
+				<div class="card-action">
+					<input type="hidden" name="server" value="{{.Info.Server}}"/>
+					<input type="submit" class="btn-flat orange-text text-accent-2" value="submit">
+				</div>
+			</form>
+			{{end}}
+		</div>
+	</div>
+</div>
+</div>
+{{ else }}
+<div class="row">
+	<div class="col s12 m6 push-m3">
+		<div class="card col s12">
+			<div class="card-content">
+				<p>Please <a href="/api/login">login</a> to view the pasta</p>
+			</div>
+		</div>
+	</div>
+</div>
+{{end}} {{end}}

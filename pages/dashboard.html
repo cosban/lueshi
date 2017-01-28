@@ -1,0 +1,24 @@
+{{define "content"}}
+<div class="row">
+    <div class="col m4">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">dash</span>
+                <div>
+                    perhaps i'll put something here one day
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col m8">
+        <div class="card">
+            <div class="card-content">
+                 <span class="card-title">servers</span>
+                <div class="collection" style="margin-bottom:0; border-left: 0; border-right: 0; border-bottom:0;">
+				    {{range .Info.Servers}}  <div class="collection-item">{{.Name}} - <a href="/pasta?s={{.ID}}">pasta</a></div> {{end}}
+			    </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}
