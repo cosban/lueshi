@@ -44,7 +44,7 @@ func mode(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 func start(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	if running {
 		s.ChannelMessageSend(m.ChannelID, "Please wait for the current game to finish")
-	} else {
+	} else if current != nil {
 		running = current.Start(s, m, finish)
 	}
 }
