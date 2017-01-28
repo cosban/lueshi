@@ -225,6 +225,10 @@ func cardValue(card internal.Card, total int) int {
 
 func (self *BLKJK) Finish(s *discordgo.Session, m *discordgo.MessageCreate) {
 	self.players = []*CardPlayer{}
+	self.dealer = internal.NewHand()
+	self.cursor = 0
+	self.deck = internal.NewDeck()
+
 	command.UnregisterDirectCommands(self.actions)
 	self.onEndState()
 }
