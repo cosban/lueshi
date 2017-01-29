@@ -140,6 +140,9 @@ func (self *BLKJK) Bet(args []string, s *discordgo.Session, m *discordgo.Message
 		s.ChannelMessageSend(m.ChannelID, "Betting is not allowed at this time")
 	}
 	p := self.getPlayer(m.Author.ID)
+	if p == nil {
+		return
+	}
 	message := ""
 	if b, e := strconv.Atoi(args[0]); e == nil && b <= p.bank {
 		self.bets[p.ID] = b
