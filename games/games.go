@@ -54,7 +54,11 @@ func join(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	if running {
 		s.ChannelMessageSend(m.ChannelID, "Please wait for the current game to finish")
 	} else {
-		current.Join(s, m)
+		if current != nil {
+			current.Join(s, m)
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "You can't join what doesn't exist")
+		}
 	}
 }
 

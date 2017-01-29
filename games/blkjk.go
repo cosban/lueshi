@@ -234,7 +234,7 @@ func (self *BLKJK) nextPlayer(s *discordgo.Session, m *discordgo.MessageCreate) 
 
 func (self *BLKJK) dealEarnings(s *discordgo.Session, m *discordgo.MessageCreate) string {
 	message := ""
-	for i, p := range self.players {
+	for _, p := range self.players {
 		total := handTotal(p.hand)
 		dealer := handTotal(self.dealer)
 		if total <= 21 && total > dealer || total <= 21 && dealer > 21 {
