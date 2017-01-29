@@ -144,12 +144,14 @@ func (self *BLKJK) Bet(args []string, s *discordgo.Session, m *discordgo.Message
 		return
 	}
 	message := ""
-	if b, e := strconv.Atoi(args[0]); e == nil && b <= p.bank {
+	if b, e := strconv.Atoi(args[0]); e == nil && (b <= p.bank || b < 1) {
 		self.bets[p.ID] = b
 		p.bank = p.bank - b
 		message += fmt.Sprintf("<@%s> bets %d and has %d remaining", p.ID, b, p.bank)
 	} else {
 		message += fmt.Sprintf("<@%s> you can't bet that. You have %d remaining", p.ID, p.bank)
+		s.ChannelMessageSend(m.ChannelID, message)
+		return
 	}
 	if len(self.bets) == len(self.players) {
 		self.betting = false
@@ -244,6 +246,7 @@ func (self *BLKJK) reset() {
 		p.hand = internal.NewHand()
 	}
 	self.dealer = internal.NewHand()
+	self.bets = map[string]int{}
 	self.cursor = 0
 	self.deck = internal.NewDeck()
 	self.betting = true
