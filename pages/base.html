@@ -2,32 +2,33 @@
 
 <head>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/css/materialize.min.css">
 	<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/js/materialize.min.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>LUEshi</title>
 </head>
+<style>
+header, main, footer {
+      padding-left: 300px;
+}
+</style>
 
 <body>
-	<nav class="blue darken-3">
-		<div class="container-fluid">
-			<div class="nav-wrapper">
-				<a href="/" class="brand-logo" style="padding: 0 15px;">LUEshi</a>
-				<ul id="nav-mobile" class="right hide-on-med-and-down">
-					<li><a href="/about">about</a></li>
-					{{ if .User }}
-					<li><a href="/dashboard">dashboard</a></li>
-					<li><a href="/invite">invite</a></li>
-					<li><span style="padding: 0 15px;">Hello {{ .User.Username }}</span></li>
-					{{ else }}
-					<li><a href="/api/login">login</a></li>
-					{{ end }}
-				</ul>
-			</div>
-		</div>
-	</nav>
-	{{template "content" .}}
+	<header>
+		<ul class="side-nav fixed blue-grey darken-1">
+			<li class="logo"><a href="/" class="brand-logo" style="padding: 0 15px;">LUEshi</a></li>
+			<li><a href="/about">about</a></li>
+			{{ if .User }}
+			<li><a href="/dashboard">dashboard</a></li>
+			<li><a href="/invite">invite</a></li>
+			{{else}}
+			<li><a href="/api/login">login</a></li>
+			{{ end }}
+		</ul>
+	</header>
+	<main>
+{{template "content" .}}
+	</main>
 </body>
-
 </html>
