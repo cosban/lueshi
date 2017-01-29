@@ -244,7 +244,7 @@ func (self *BLKJK) dealEarnings(s *discordgo.Session, m *discordgo.MessageCreate
 			message += "\nDealer hand beats <@" + p.ID + ">"
 			if p.bank == 0 {
 				message += "... and because they have no more money I'm kicking them out."
-				self.players = append(self.players[:i], self.players[i+1:]...)
+				self.removePlayer(p)
 			}
 		}
 	}
@@ -260,6 +260,16 @@ func (self *BLKJK) reset() {
 	self.cursor = 0
 	self.deck = internal.NewDeck()
 	self.betting = true
+}
+
+func (self *BLKJK) removePlayer(p *CardPlayer) {
+	var players []*CardPlayer
+	for _, pl := range self.players {
+		if pl != p {
+			players = append(players, pl)
+		}
+	}
+	self.players = players
 }
 
 func handTotal(deck internal.Deck) int {
