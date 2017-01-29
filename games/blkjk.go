@@ -47,10 +47,11 @@ func NewBLKJK() *BLKJK {
 	}
 
 	self.actions = map[string]command.Responder{
-		"hit":   self.Hit,
-		"stay":  self.Stay,
-		"bet":   self.Bet,
-		"leave": self.Leave,
+		"hit":     self.Hit,
+		"stay":    self.Stay,
+		"bet":     self.Bet,
+		"leave":   self.Leave,
+		"balance": self.Total,
 	}
 
 	return self
@@ -173,6 +174,15 @@ func (self *BLKJK) Leave(args []string, s *discordgo.Session, m *discordgo.Messa
 	if len(self.players) == 0 {
 		s.ChannelMessageSend(m.ChannelID, "Also no one is left so the game is finished.")
 		self.Finish(s, m)
+	}
+}
+
+func (self *BLKJK) Total(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	for _, p := range self.players {
+		if p.ID == m.Author.ID {
+			message := fmt.Sprintf("<@%s> has %d yetibux.", p.ID, p.bank)
+			s.ChannelMessageSend(m.ChannelID, message)
+		}
 	}
 }
 
