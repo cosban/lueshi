@@ -11,10 +11,11 @@ import (
 
 var (
 	Commands = map[string]command.Responder{
-		"mode":  mode,
-		"start": start,
-		"join":  join,
-		"games": list,
+		"mode":   mode,
+		"start":  start,
+		"join":   join,
+		"games":  list,
+		"status": status,
 	}
 	running = false
 	games   = map[string]internal.Game{
@@ -76,4 +77,17 @@ func rules(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func finish() {
 	running = false
+}
+
+func status(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	if current != nil {
+		message := fmt.Sprintf("The current game is %s and it is ", current.Name())
+		if !running {
+			message += "not "
+		}
+		message += "running"
+		s.ChannelMessageSend(m.ChannelID, message)
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "no game is currently selected")
+	}
 }
