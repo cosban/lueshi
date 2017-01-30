@@ -96,6 +96,10 @@ func (self *BLKJK) Start(s *discordgo.Session, m *discordgo.MessageCreate, finis
 
 //Join allows a player to join the session
 func (self *BLKJK) Join(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if self.playerExists(m.Author.ID) {
+		s.ChannelMessageSend(m.ChannelID, "You are already ready to play!")
+		return
+	}
 	self.players = append(self.players, &CardPlayer{
 		ID:   m.Author.ID,
 		hand: internal.NewHand(),
