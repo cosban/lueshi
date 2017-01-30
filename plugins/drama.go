@@ -23,6 +23,7 @@ type Drama struct {
 		Text struct {
 			Content string `json:"*"`
 		}
+		Externallinks []string
 	}
 }
 
@@ -47,8 +48,12 @@ func NewDrama() *Drama {
 
 func (self *Drama) Run(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	drama := self.requestDrama()
-	response := fmt.Sprintf("\u200B<@%s>:\n %s", m.Author.ID, drama)
-	s.ChannelMessageSend(m.ChannelID, response)
+	response := fmt.Sprintf("%s", drama)
+	s.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+		Title:       "dramalinks",
+		Description: response,
+		URL:         "https://cosban.net",
+	})
 }
 
 func (self *Drama) login() {
@@ -76,10 +81,10 @@ func (self *Drama) requestDrama() string {
 	defer resp.Body.Close()
 	content, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(content, self)
-	return sanitize(self.Parse.Text.Content)
+	return self.sanitize(self.Parse.Text.Content)
 }
 
-func sanitize(drama string) string {
+func (self *Drama) sanitize(drama string) string {
 	sanitizer := bluemonday.NewPolicy()
 	drama = sanitizer.Sanitize(drama)
 	drama = strings.TrimSpace(drama)
@@ -88,5 +93,8 @@ func sanitize(drama string) string {
 	drama = strings.Replace(drama, "\n\n", "", -1)
 	drama = drama[:strings.LastIndex(drama, "\n")-2]
 	drama = strings.Replace(drama, "Level:", "\nLevel:", 1)
+	for i, l := range self.Parse.Externallinks[1:] {
+		drama = strings.Replace(drama, fmt.Sprintf("[%d]", i+1), fmt.Sprintf("[[%d]](%s)", i+1, l), -1)
+	}
 	return drama
 }
