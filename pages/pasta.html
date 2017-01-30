@@ -28,7 +28,7 @@
 			{{if .Info.Current}}
 			<div class="card-content">
 				<span class="card-title">{{.Info.Current.Title}}</span>
-				<p style="white-space: pre">{{.Info.Current.Content}}</p>
+				<p style="white-space: pre-line">{{.Info.Current.Content}}</p>
 			</div>
 			{{else}}
 			<form action="/api/create_pasta" method="POST">
