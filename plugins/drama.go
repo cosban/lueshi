@@ -93,8 +93,8 @@ func (self *Drama) sanitize(drama string) string {
 	drama = strings.Replace(drama, "\n\n", "", -1)
 	drama = drama[:strings.LastIndex(drama, "\n")-2]
 	drama = strings.Replace(drama, "Level:", "\nLevel:", 1)
-	for i, l := range self.Parse.Externallinks[1:] {
-		drama = strings.Replace(drama, fmt.Sprintf("[%d]", i+1), fmt.Sprintf("[[%d]](%s)", i, l), -1)
+	for i, l := range self.Parse.Externallinks[:len(self.Parse.Externallinks)-1] {
+		drama = strings.Replace(drama, fmt.Sprintf("[%d]", i+1), fmt.Sprintf("[[%d]](%s)", i+1, l), -1)
 	}
 	return drama
 }
