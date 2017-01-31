@@ -123,9 +123,9 @@ func (self *BLKJK) setup(s *discordgo.Session, m *discordgo.MessageCreate) {
 	self.deck.Shuffle()
 	self.Deal()
 
-	message := "\n[Dealers Hand: " + self.dealerHand(false) + "]"
+	message := fmt.Sprintf("\n[Dealer: %s]", self.dealerHand(false))
 	for _, p := range self.players {
-		message += "\n[<@" + p.ID + ">'s Hand: " + getHand(p.hand) + "]"
+		message += fmt.Sprintf("\n[<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
 	}
 	message += "\n<@" + self.players[self.cursor].ID + "> It is your turn."
 	s.ChannelMessageSend(m.ChannelID, message)
@@ -172,7 +172,7 @@ func (self *BLKJK) Leave(args []string, s *discordgo.Session, m *discordgo.Messa
 		if p.ID == m.Author.ID {
 			self.players = append(self.players[:i], self.players[i+1:]...)
 			delete(self.bets, p.ID)
-			s.ChannelMessageSend(m.ChannelID, "KBAIIIIII")
+			s.ChannelMessageSend(m.ChannelID, "come back soon.")
 		}
 	}
 	if len(self.players) == 0 {
@@ -191,22 +191,24 @@ func (self *BLKJK) Total(args []string, s *discordgo.Session, m *discordgo.Messa
 }
 
 func (self *BLKJK) Hit(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	current := self.players[self.cursor]
-	if m.Author.ID == current.ID {
-		current.hand.Insert(self.deck.Draw())
-		if handTotal(current.hand) > 21 {
-			s.ChannelMessageSend(m.ChannelID, "<@"+current.ID+"> now has "+getHand(current.hand)+"\nOver 21! Bust!")
+	p := self.players[self.cursor]
+	if m.Author.ID == p.ID {
+		p.hand.Insert(self.deck.Draw())
+		message := fmt.Sprintf("\n[<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
+		if handTotal(p.hand) > 21 {
+			s.ChannelMessageSend(m.ChannelID, message+"\nOver 21! Bust!")
 			self.nextPlayer(s, m)
 		} else {
-			s.ChannelMessageSend(m.ChannelID, "<@"+current.ID+"> now has "+getHand(current.hand))
+			s.ChannelMessageSend(m.ChannelID, message)
 		}
 	}
 }
 
 func (self *BLKJK) Stay(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	current := self.players[self.cursor]
-	if m.Author.ID == current.ID {
-		s.ChannelMessageSend(m.ChannelID, "Staying at "+getHand(current.hand))
+	p := self.players[self.cursor]
+	if m.Author.ID == p.ID {
+		message := fmt.Sprintf("\nStay [<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
+		s.ChannelMessageSend(m.ChannelID, message)
 		self.nextPlayer(s, m)
 	}
 }

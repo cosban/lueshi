@@ -6,4 +6,4 @@ _testmain.go
 debug
 
 # lueshi stuff
-config.ini
+*.ini
