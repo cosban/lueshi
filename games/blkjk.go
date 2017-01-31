@@ -149,7 +149,7 @@ func (self *BLKJK) Bet(args []string, s *discordgo.Session, m *discordgo.Message
 		return
 	}
 	message := ""
-	if b, e := strconv.Atoi(args[0]); e == nil && (b <= p.bank || b < 1) {
+	if b, e := strconv.Atoi(args[0]); e == nil && b <= p.bank && b > 1 {
 		self.bets[p.ID] = b
 		p.bank = p.bank - b
 		message += fmt.Sprintf("<@%s> bets %d and has %d remaining", p.ID, b, p.bank)
