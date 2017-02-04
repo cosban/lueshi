@@ -244,7 +244,7 @@ func (self *BLKJK) Stay(args []string, s *discordgo.Session, m *discordgo.Messag
 }
 
 func (self *BLKJK) nextPlayer(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if self.cursor == len(self.players) {
+	if self.cursor < len(self.players) {
 		s.ChannelMessageSend(m.ChannelID, "\nIt is now <@"+self.players[self.cursor].ID+">'s turn!")
 		return
 	}
