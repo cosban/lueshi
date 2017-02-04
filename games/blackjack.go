@@ -272,10 +272,10 @@ func (self *BLKJK) dealEarnings(s *discordgo.Session, m *discordgo.MessageCreate
 		total := handTotal(p.hand)
 		dealer := handTotal(self.dealer)
 		if total <= 21 && total > dealer || total <= 21 && dealer > 21 {
-			message += fmt.Sprintf("\n<@%s> beats the dealer and earns %d", p.ID, self.bets[p.ID]*2)
 			p.bank = p.bank + self.bets[p.ID]*2
+			message += fmt.Sprintf("\n<@%s> beats the dealer and earns %d (bank: %d)", p.ID, self.bets[p.ID]*2, p.bank)
 		} else {
-			message += "\nDealer hand beats <@" + p.ID + ">"
+			message += fmt.Sprintf("\nDealer hand beats <@%s> (bank: %d)", p.ID, p.bank)
 			if p.bank == 0 {
 				message += "... and because they have no more money I'm kicking them out."
 				self.removePlayer(p)
