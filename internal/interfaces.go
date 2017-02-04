@@ -29,6 +29,7 @@ type Deck interface {
 	Draw() Card
 	Peek() Card
 	Next() Card
+	Size() int
 }
 
 type Card interface {

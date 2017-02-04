@@ -11,6 +11,13 @@ type FrenchCard struct {
 	suit  string
 }
 
+func NewCard(v, s string) *FrenchCard {
+	return &FrenchCard{
+		value: v,
+		suit:  s,
+	}
+}
+
 func (c *FrenchCard) Value() string {
 	return c.value
 }
@@ -31,7 +38,7 @@ func NewDeck() *FrenchDeck {
 	}
 	for _, v := range []string{"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"} {
 		for _, s := range []string{"\u2665", "\u2663", "\u2666", "\u2660"} {
-			self.deck = append(self.deck, &FrenchCard{value: v, suit: s})
+			self.deck = append(self.deck, NewCard(v, s))
 		}
 	}
 

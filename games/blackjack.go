@@ -11,7 +11,20 @@ import (
 	"github.com/cosban/lueshi/internal"
 )
 
-//BLKJK is shorthand for Blackjack
+type CardPlayer struct {
+	ID   string
+	hand internal.Deck
+	bank int
+}
+
+func NewPlayer(id string) *CardPlayer {
+	return &CardPlayer{
+		ID:   id,
+		hand: internal.NewHand(),
+		bank: 100,
+	}
+}
+
 type BLKJK struct {
 	name        string
 	description string
@@ -24,16 +37,9 @@ type BLKJK struct {
 	betting     bool
 
 	actions    map[string]command.Responder
-	onEndState func() //Ending function to close the game
+	onEndState func()
 }
 
-type CardPlayer struct {
-	ID   string
-	hand internal.Deck
-	bank int
-}
-
-//New generates a new BLKJK
 func NewBLKJK() *BLKJK {
 	self := &BLKJK{
 		name:        "Blackjack",
@@ -57,17 +63,14 @@ func NewBLKJK() *BLKJK {
 	return self
 }
 
-//Name returns the name of this game
 func (self *BLKJK) Name() string {
 	return self.name
 }
 
-//Description returns the description of this game
 func (self *BLKJK) Description() string {
 	return self.description
 }
 
-//Rules returns the rules of this game
 func (self *BLKJK) Rules() string {
 	return self.rules
 }
@@ -94,18 +97,24 @@ func (self *BLKJK) Start(s *discordgo.Session, m *discordgo.MessageCreate, finis
 	return true
 }
 
-//Join allows a player to join the session
 func (self *BLKJK) Join(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if self.playerExists(m.Author.ID) {
+	player := NewPlayer(m.Author.ID)
+	if self.addPlayer(player) {
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s> has joined Blackjack! There are now %d players", m.Author.ID, len(self.players)))
+	} else {
 		s.ChannelMessageSend(m.ChannelID, "You are already ready to play!")
-		return
 	}
-	self.players = append(self.players, &CardPlayer{
-		ID:   m.Author.ID,
-		hand: internal.NewHand(),
-		bank: 100,
-	})
-	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s> has joined Blackjack! There are now %d players", m.Author.ID, len(self.players)))
+}
+
+func (self *BLKJK) Leave(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	player := self.getPlayer(m.Author.ID)
+	if self.removePlayer(player) {
+		s.ChannelMessageSend(m.ChannelID, "come back soon.")
+	}
+	if len(self.players) == 0 {
+		s.ChannelMessageSend(m.ChannelID, "Also no one is left so the game is finished.")
+		self.Finish(s, m)
+	}
 }
 
 func (self *BLKJK) Finish(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -118,11 +127,38 @@ func (self *BLKJK) Finish(s *discordgo.Session, m *discordgo.MessageCreate) {
 	self.onEndState()
 }
 
-func (self *BLKJK) setup(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (self *BLKJK) addPlayer(player *CardPlayer) bool {
+	if self.playerExists(player.ID) {
+		return false
+	}
+	self.players = append(self.players, player)
+	return true
+}
+
+func (self *BLKJK) removePlayer(player *CardPlayer) bool {
+	for i, p := range self.players {
+		if p.ID == player.ID {
+			self.players = append(self.players[:i], self.players[i+1:]...)
+			delete(self.bets, p.ID)
+			return true
+		}
+	}
+	return false
+}
+
+func (self *BLKJK) dealNewHand() {
 	self.deck = internal.NewDeck()
 	self.deck.Shuffle()
-	self.Deal()
+	for i := 0; i < 2; i++ {
+		self.dealer.Insert(self.deck.Draw())
+		for _, p := range self.players {
+			p.hand.Insert(self.deck.Draw())
+		}
+	}
+}
 
+func (self *BLKJK) dealHand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	self.dealNewHand()
 	message := fmt.Sprintf("\n[Dealer: %s]", self.dealerHand(false))
 	for _, p := range self.players {
 		message += fmt.Sprintf("\n[<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
@@ -131,13 +167,22 @@ func (self *BLKJK) setup(s *discordgo.Session, m *discordgo.MessageCreate) {
 	s.ChannelMessageSend(m.ChannelID, message)
 }
 
-func (self *BLKJK) Deal() {
-	for i := 0; i < 2; i++ {
-		self.dealer.Insert(self.deck.Draw())
-		for _, p := range self.players {
-			p.hand.Insert(self.deck.Draw())
-		}
+func (self *BLKJK) hit(id string) bool {
+	current := self.players[self.cursor]
+	if id == current.ID {
+		current.hand.Insert(self.deck.Draw())
+		return true
 	}
+	return false
+}
+
+func (self *BLKJK) stay(id string) bool {
+	current := self.players[self.cursor]
+	if id == current.ID {
+		self.cursor++
+		return true
+	}
+	return false
 }
 
 func (self *BLKJK) Bet(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -161,23 +206,9 @@ func (self *BLKJK) Bet(args []string, s *discordgo.Session, m *discordgo.Message
 	if len(self.bets) == len(self.players) {
 		self.betting = false
 		s.ChannelMessageSend(m.ChannelID, message+"\nBetting is now closed")
-		self.setup(s, m)
+		self.dealHand(s, m)
 	} else {
 		s.ChannelMessageSend(m.ChannelID, message)
-	}
-}
-
-func (self *BLKJK) Leave(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	for i, p := range self.players {
-		if p.ID == m.Author.ID {
-			self.players = append(self.players[:i], self.players[i+1:]...)
-			delete(self.bets, p.ID)
-			s.ChannelMessageSend(m.ChannelID, "come back soon.")
-		}
-	}
-	if len(self.players) == 0 {
-		s.ChannelMessageSend(m.ChannelID, "Also no one is left so the game is finished.")
-		self.Finish(s, m)
 	}
 }
 
@@ -191,9 +222,8 @@ func (self *BLKJK) Total(args []string, s *discordgo.Session, m *discordgo.Messa
 }
 
 func (self *BLKJK) Hit(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	p := self.players[self.cursor]
-	if m.Author.ID == p.ID {
-		p.hand.Insert(self.deck.Draw())
+	if self.hit(m.Author.ID) {
+		p := self.players[self.cursor]
 		message := fmt.Sprintf("\n[<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
 		if handTotal(p.hand) > 21 {
 			s.ChannelMessageSend(m.ChannelID, message+"\nOver 21! Bust!")
@@ -206,7 +236,7 @@ func (self *BLKJK) Hit(args []string, s *discordgo.Session, m *discordgo.Message
 
 func (self *BLKJK) Stay(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	p := self.players[self.cursor]
-	if m.Author.ID == p.ID {
+	if self.stay(m.Author.ID) {
 		message := fmt.Sprintf("\nStay [<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
 		s.ChannelMessageSend(m.ChannelID, message)
 		self.nextPlayer(s, m)
@@ -214,27 +244,25 @@ func (self *BLKJK) Stay(args []string, s *discordgo.Session, m *discordgo.Messag
 }
 
 func (self *BLKJK) nextPlayer(s *discordgo.Session, m *discordgo.MessageCreate) {
-	self.cursor++
-	message := ""
 	if self.cursor == len(self.players) {
-		message += "It is now the dealer's turn. The dealer has " + self.dealerHand(true)
-		for handTotal(self.dealer) < 17 {
-			self.dealer.Insert(self.deck.Draw())
-			message += "\nThe dealer draws and now has " + self.dealerHand(true)
-		}
-		if handTotal(self.dealer) > 21 {
-			message += "Dealer bust!"
-		}
-		message += self.dealEarnings(s, m)
-		if len(self.players) > 0 {
-			s.ChannelMessageSend(m.ChannelID, message+"\nA new round is now starting. Please make your bets.")
-			self.reset()
-		} else {
-			s.ChannelMessageSend(m.ChannelID, message+"\nLol you guys fucking suck. The game is now over.")
-			self.Finish(s, m)
-		}
-	} else {
 		s.ChannelMessageSend(m.ChannelID, "\nIt is now <@"+self.players[self.cursor].ID+">'s turn!")
+		return
+	}
+	message := "It is now the dealer's turn. The dealer has " + self.dealerHand(true)
+	for handTotal(self.dealer) < 17 {
+		self.dealer.Insert(self.deck.Draw())
+		message += "\nThe dealer draws and now has " + self.dealerHand(true)
+	}
+	if handTotal(self.dealer) > 21 {
+		message += "Dealer bust!"
+	}
+	message += self.dealEarnings(s, m)
+	if len(self.players) > 0 {
+		s.ChannelMessageSend(m.ChannelID, message+"\nA new round is now starting. Please make your bets.")
+		self.reset()
+	} else {
+		s.ChannelMessageSend(m.ChannelID, message+"\nLol you guys fucking suck. The game is now over.")
+		self.Finish(s, m)
 	}
 }
 
@@ -268,42 +296,12 @@ func (self *BLKJK) reset() {
 	self.betting = true
 }
 
-func (self *BLKJK) removePlayer(p *CardPlayer) {
-	var players []*CardPlayer
-	for _, pl := range self.players {
-		if pl != p {
-			players = append(players, pl)
-		}
-	}
-	self.players = players
-}
-
-func handTotal(deck internal.Deck) int {
-	card := deck.Next()
-	total := 0
-	for card != nil {
-		total += cardValue(card, total)
-		card = deck.Next()
-	}
-	return total
-}
-
 func (self *BLKJK) dealerHand(full bool) string {
 	if !full {
 		card := self.dealer.Peek()
 		return card.Value() + card.Suit()
 	}
 	return getHand(self.dealer)
-}
-
-func getHand(deck internal.Deck) string {
-	message := ""
-	c := deck.Next()
-	for c != nil {
-		message += ", " + c.Value() + c.Suit()
-		c = deck.Next()
-	}
-	return message[2:]
 }
 
 func (self *BLKJK) getPlayer(ID string) *CardPlayer {
@@ -319,24 +317,52 @@ func (self *BLKJK) playerExists(ID string) bool {
 	return self.getPlayer(ID) != nil
 }
 
-func cardValue(card internal.Card, total int) int {
+func getHand(deck internal.Deck) string {
+	message := ""
+	if deck.Size() < 1 {
+		return message
+	}
+	c := deck.Next()
+	for c != nil {
+		message += ", " + c.Value() + c.Suit()
+		c = deck.Next()
+	}
+	return message[2:]
+}
+
+func handTotal(deck internal.Deck) int {
+	card := deck.Next()
+	total := 0
+	a := 0
+	for card != nil {
+		total, a = addCardValue(card, a, total)
+		card = deck.Next()
+	}
+	return total
+}
+
+// card: a card
+// a: total of maxed aces
+// total: the current hand total
+func addCardValue(card internal.Card, a, total int) (int, int) {
 	i, e := strconv.Atoi(card.Value())
-	if e == nil {
-		return i
-	}
-	switch card.Value() {
-	case "J":
-		fallthrough
-	case "Q":
-		fallthrough
-	case "K":
-		return 10
-	case "A":
-		if total+11 > 21 {
-			return 1
+	if e != nil {
+		switch card.Value() {
+		case "J":
+			fallthrough
+		case "Q":
+			fallthrough
+		case "K":
+			i = 10
+		case "A":
+			i = 11
+			a++
 		}
-		return 11
 	}
-	// error
-	return 0
+	total = total + i
+	for a > 0 && total > 21 {
+		a--
+		total = total - 10
+	}
+	return total, a
 }

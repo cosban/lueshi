@@ -11,6 +11,7 @@ var (
 	key, cx, weatherkey string
 	commands            = make(map[string]Command)
 	direct              = make(map[string]Command)
+	setup               = false
 )
 
 type Responder func([]string, *discordgo.Session, *discordgo.MessageCreate)
@@ -20,7 +21,7 @@ type Command struct {
 	Respond              Responder
 }
 
-func init() {
+func initCommands() {
 	conf, err := ini.LoadFile("config.ini")
 	if err != nil {
 		log.Panicln("There was an issue with the config file! ", err)
@@ -31,6 +32,9 @@ func init() {
 }
 
 func RegisterCommand(name, usage, summary string, responder Responder) {
+	if !setup {
+		initCommands()
+	}
 	commands[name] = Command{name, usage, summary, responder}
 }
 
@@ -41,6 +45,9 @@ func RunCommand(command string, args []string, s *discordgo.Session, m *discordg
 }
 
 func RegisterDirectCommands(commands map[string]Responder) {
+	if !setup {
+		initCommands()
+	}
 	for k, v := range commands {
 		direct[k] = Command{k, "", "", v}
 	}
