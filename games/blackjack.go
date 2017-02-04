@@ -226,6 +226,7 @@ func (self *BLKJK) Hit(args []string, s *discordgo.Session, m *discordgo.Message
 		p := self.players[self.cursor]
 		message := fmt.Sprintf("\n[<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
 		if handTotal(p.hand) > 21 {
+			self.cursor++
 			s.ChannelMessageSend(m.ChannelID, message+"\nOver 21! Bust!")
 			self.nextPlayer(s, m)
 		} else {
