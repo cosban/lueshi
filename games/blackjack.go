@@ -127,6 +127,65 @@ func (self *BLKJK) Finish(s *discordgo.Session, m *discordgo.MessageCreate) {
 	self.onEndState()
 }
 
+func (self *BLKJK) Bet(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	if !self.betting {
+		s.ChannelMessageSend(m.ChannelID, "Betting is not allowed at this time")
+	}
+	p := self.getPlayer(m.Author.ID)
+	if p == nil {
+		return
+	}
+	message := ""
+	if b, e := strconv.Atoi(args[0]); e == nil && b <= p.bank && b > 0 {
+		self.bets[p.ID] = b
+		p.bank = p.bank - b
+		message += fmt.Sprintf("<@%s> bets %d and has %d remaining", p.ID, b, p.bank)
+	} else {
+		message += fmt.Sprintf("<@%s> you can't bet that. You have %d remaining", p.ID, p.bank)
+		s.ChannelMessageSend(m.ChannelID, message)
+		return
+	}
+	if len(self.bets) == len(self.players) {
+		self.betting = false
+		s.ChannelMessageSend(m.ChannelID, message+"\nBetting is now closed")
+		self.dealHand(s, m)
+	} else {
+		s.ChannelMessageSend(m.ChannelID, message)
+	}
+}
+
+func (self *BLKJK) Total(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	for _, p := range self.players {
+		if p.ID == m.Author.ID {
+			message := fmt.Sprintf("<@%s> has %d yetibux.", p.ID, p.bank)
+			s.ChannelMessageSend(m.ChannelID, message)
+		}
+	}
+}
+
+func (self *BLKJK) Hit(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	if !self.betting && self.hit(m.Author.ID) {
+		p := self.players[self.cursor]
+		message := fmt.Sprintf("\n[<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
+		if handTotal(p.hand) > 21 {
+			self.cursor++
+			s.ChannelMessageSend(m.ChannelID, message+"\nOver 21! Bust!")
+			self.nextPlayer(s, m)
+		} else {
+			s.ChannelMessageSend(m.ChannelID, message)
+		}
+	}
+}
+
+func (self *BLKJK) Stay(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	p := self.players[self.cursor]
+	if self.stay(m.Author.ID) {
+		message := fmt.Sprintf("\nStay [<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
+		s.ChannelMessageSend(m.ChannelID, message)
+		self.nextPlayer(s, m)
+	}
+}
+
 func (self *BLKJK) addPlayer(player *CardPlayer) bool {
 	if self.playerExists(player.ID) {
 		return false
@@ -169,7 +228,7 @@ func (self *BLKJK) dealHand(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func (self *BLKJK) hit(id string) bool {
 	current := self.players[self.cursor]
-	if id == current.ID {
+	if id == current.ID && !self.betting {
 		current.hand.Insert(self.deck.Draw())
 		return true
 	}
@@ -183,65 +242,6 @@ func (self *BLKJK) stay(id string) bool {
 		return true
 	}
 	return false
-}
-
-func (self *BLKJK) Bet(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	if !self.betting {
-		s.ChannelMessageSend(m.ChannelID, "Betting is not allowed at this time")
-	}
-	p := self.getPlayer(m.Author.ID)
-	if p == nil {
-		return
-	}
-	message := ""
-	if b, e := strconv.Atoi(args[0]); e == nil && b <= p.bank && b > 0 {
-		self.bets[p.ID] = b
-		p.bank = p.bank - b
-		message += fmt.Sprintf("<@%s> bets %d and has %d remaining", p.ID, b, p.bank)
-	} else {
-		message += fmt.Sprintf("<@%s> you can't bet that. You have %d remaining", p.ID, p.bank)
-		s.ChannelMessageSend(m.ChannelID, message)
-		return
-	}
-	if len(self.bets) == len(self.players) {
-		self.betting = false
-		s.ChannelMessageSend(m.ChannelID, message+"\nBetting is now closed")
-		self.dealHand(s, m)
-	} else {
-		s.ChannelMessageSend(m.ChannelID, message)
-	}
-}
-
-func (self *BLKJK) Total(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	for _, p := range self.players {
-		if p.ID == m.Author.ID {
-			message := fmt.Sprintf("<@%s> has %d yetibux.", p.ID, p.bank)
-			s.ChannelMessageSend(m.ChannelID, message)
-		}
-	}
-}
-
-func (self *BLKJK) Hit(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	if self.hit(m.Author.ID) {
-		p := self.players[self.cursor]
-		message := fmt.Sprintf("\n[<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
-		if handTotal(p.hand) > 21 {
-			self.cursor++
-			s.ChannelMessageSend(m.ChannelID, message+"\nOver 21! Bust!")
-			self.nextPlayer(s, m)
-		} else {
-			s.ChannelMessageSend(m.ChannelID, message)
-		}
-	}
-}
-
-func (self *BLKJK) Stay(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	p := self.players[self.cursor]
-	if self.stay(m.Author.ID) {
-		message := fmt.Sprintf("\nStay [<@%s>: %s] (%d)", p.ID, getHand(p.hand), handTotal(p.hand))
-		s.ChannelMessageSend(m.ChannelID, message)
-		self.nextPlayer(s, m)
-	}
 }
 
 func (self *BLKJK) nextPlayer(s *discordgo.Session, m *discordgo.MessageCreate) {
