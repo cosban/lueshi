@@ -39,7 +39,7 @@ func Quit(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func Restart(args []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	if !api.IsOwner(m.Author) {
+	if !(api.IsOwner(m.Author) || api.IsTrusted(m.Author)) {
 		return
 	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
