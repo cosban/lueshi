@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/cosban/lueshi/api"
 	"github.com/cosban/lueshi/command"
@@ -13,6 +15,24 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/vaughan0/go-ini"
 )
+
+var hearts = []string{
+	":sparkling_heart::gift_heart::revolving_hearts::heart_decoration::love_letter:~k-kawaiiiiiiiiii!!!!!~!!!~~!!~:love_letter::heart_decoration::revolving_hearts::gift_heart::sparkling_heart:",
+	"<3",
+	":heart:",
+	"ily %n",
+	"go fuck yourself",
+	"tee hee, senpai noticed me",
+	"わたしは、あなたを愛しています",
+	"사랑해",
+	"杀了自己",
+	"01101100011011110111011001100101",
+	"`" + `func heart(s *discordgo.Session, m *discordgo.MessageCreate) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	index := r.Int31n(int32(len(hearts)))
+	s.ChannelMessageSend(m.ChannelID, strings.ReplaceAll(heart[index], "%n", m.Author.Username, -1))
+}` + "`",
+}
 
 var (
 	token, prefix string
@@ -75,7 +95,7 @@ func handleMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if m.Content == "<3" {
-		s.ChannelMessageSend(m.ChannelID, "<3")
+		heart(s, m)
 		return
 	}
 	content := strings.ToLower(strings.Trim(m.Content, " "))
@@ -94,4 +114,10 @@ func handleMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 			command.RunCommand(args[0][1:], args[1:], s, m)
 		}
 	}
+}
+
+func heart(s *discordgo.Session, m *discordgo.MessageCreate) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	index := r.Int31n(int32(len(hearts)))
+	s.ChannelMessageSend(m.ChannelID, strings.Replace(hearts[index], "%n", m.Author.Username, -1))
 }
