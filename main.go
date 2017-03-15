@@ -26,6 +26,7 @@ var hearts = []string{
 	"わたしは、あなたを愛しています",
 	"사랑해",
 	"杀了自己",
+	":heart:",
 	"01101100011011110111011001100101",
 	"`" + `func heart(s *discordgo.Session, m *discordgo.MessageCreate) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -94,7 +95,7 @@ func handleMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == user.ID {
 		return
 	}
-	if m.Content == "<3" {
+	if m.Content == "<3" || m.Content == ":heart:" {
 		heart(s, m)
 		return
 	}
