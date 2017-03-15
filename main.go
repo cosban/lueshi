@@ -95,7 +95,8 @@ func handleMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == user.ID {
 		return
 	}
-	if m.Content == "<3" || m.Content == ":heart:" {
+	log.Print(m.Content)
+	if m.Content == "<3" || m.Content == "❤" {
 		heart(s, m)
 		return
 	}
